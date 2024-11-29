@@ -52,7 +52,7 @@ async def handler(event):
         players_lederbord = mongo_client.doooz.players.find({}).sort("score", -1).limit(3)
         top_players = ''
         for i in players_lederbord:
-            top_players = top_players+str(i.get('name')) + ' '
+            top_players = top_players+str(i.get('name')) + '\n'
         if not player_exist:
             mongo_client.doooz.players.insert_one({'id': event.message.peer_id.user_id, 'score': 0,'name':sender_id,'turn':'player'})
         players = mongo_client.doooz.players.find({'name':sender_id})
