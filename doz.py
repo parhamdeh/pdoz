@@ -168,7 +168,7 @@ async def call_handler(event):
 @client.on(events.CallbackQuery(pattern="flower"))
 async def call_handler2(event):
     dokme = [[Button.inline("بازی با بات", "friend"), Button.inline("بازی با دوست", "doost")]]
-    await event.reply('entekhab kon mikhay ba bot ya doostet bazi koni',buttons=dokme)
+    await event.reply('انتخاب کن ربات یا دوست',buttons=dokme)
     
 @client.on(events.CallbackQuery(pattern="friend"))
 async def call_handler_gol(event):
@@ -219,7 +219,7 @@ async def call_handler_gol_c(event):
 async def call_handler2(event):
     dokme = [[Button.inline("بازی با بات", "b"), Button.inline("بازی با دوست", "d")]]
 
-    await event.reply('entekhab kon mikhay ba bot ya doostet bazi koni',buttons=dokme)
+    await event.reply('انتخاب کن',buttons=dokme)
 
 
 
