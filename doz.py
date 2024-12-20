@@ -12,19 +12,19 @@ mongo_client=MongoClient()
 def create_board_buttons(board):
     return [
         [
-            Button.inline(board[0] if board[0] != '_' else "0", "0"),
-            Button.inline(board[1] if board[1] != '_' else "1", "1"),
-            Button.inline(board[2] if board[2] != '_' else "2", "2"),
+            Button.inline(board[0] if board[0] != '_' else "", "0"),
+            Button.inline(board[1] if board[1] != '_' else "", "1"),
+            Button.inline(board[2] if board[2] != '_' else "", "2"),
         ],
         [
-            Button.inline(board[3] if board[3] != '_' else "3", "3"),
-            Button.inline(board[4] if board[4] != '_' else "4", "4"),
-            Button.inline(board[5] if board[5] != '_' else "5", "5"),
+            Button.inline(board[3] if board[3] != '_' else "", "3"),
+            Button.inline(board[4] if board[4] != '_' else "", "4"),
+            Button.inline(board[5] if board[5] != '_' else "", "5"),
         ],
         [
-            Button.inline(board[6] if board[6] != '_' else "6", "6"),
-            Button.inline(board[7] if board[7] != '_' else "7", "7"),
-            Button.inline(board[8] if board[8] != '_' else "8", "8"),
+            Button.inline(board[6] if board[6] != '_' else "", "6"),
+            Button.inline(board[7] if board[7] != '_' else "", "7"),
+            Button.inline(board[8] if board[8] != '_' else "", "8"),
         ],
     ]
 
@@ -49,7 +49,7 @@ async def handler(event):
 # id bande khoda sender id 
         sender_id=event.sender.username
         player_exist = mongo_client.doooz.players.find_one({'id': event.message.peer_id.user_id, 'score': 0,'name':sender_id})
-        players_lederbord = mongo_client.doooz.players.find({}).sort("score", -1).limit(3)
+        players_lederbord = mongo_client.doooz.players.find({}).sort("score", -1).limit(5)
         top_players = ''
         for i in players_lederbord:
             top_players = top_players+str(i.get('name')) + '\n'
@@ -57,33 +57,186 @@ async def handler(event):
             mongo_client.doooz.players.insert_one({'id': event.message.peer_id.user_id, 'score': 0,'name':sender_id,'turn':'player'})
         players = mongo_client.doooz.players.find({'name':sender_id})
 #bayad matn reply shode taghir kone
-        await event.reply('سلام'+str(sender_id)+'خوش اومدی، یکی از بازی هارو انتخاب کن و سعی کن بیشترین امیازو بدست بیاری 🔥 نفرات برتر:'+str(top_players)+'انتخاب کن :',
+        await event.reply('سلام'+str(sender_id)+'خوش اومدی، یکی از بازی هارو انتخاب کن و سعی کن بیشترین امیازو بدست بیاری 🔥 نفرات برتر:\n'+str(top_players)+'انتخاب کن :',
                                   buttons=dokme)
 
 
 
-
 @client.on(events.CallbackQuery(pattern="rock"))
+async def handlerdss(event):
+    dokme = [[Button.inline("دوست","halk"),Button.inline("بات","Gili")]]
+    await event.reply('با دوستت میخوای بازی کنی یا بات؟',buttons=dokme)
+
+
+
+
+@client.on(events.CallbackQuery(pattern="halk"))
 async def handler10(event):
-    dokme = [
-        [
-            Button.inline("🪨سنگ", "s"),
-            Button.inline("📃کاغذ", "k"),
-            Button.inline("✂️قیچی","g"),
-        ],
-    ]        
-    await event.reply('انتخاب کن',
-                      buttons=dokme)
+    async with client.conversation(event.sender_id) as conv:
+        dokme = [
+            [
+                Button.inline("🪨سنگ", "iron"),
+                Button.inline("📃کاغذ", "xman"),
+                Button.inline("✂️قیچی","gold"),
+            ],
+        ]
+        await conv.send_message('آیدی دوستت رو بدون @ بده:')
+        id_doos = await conv.get_response()
+        sender_id = event.sender.username
+        mongo_client.doooz.online_game.insert_one({'id':sender_id})
+        online_game = mongo_client.doooz.online_game.find_one({'id':id_doos.message})
+        id2 = online_game.get('id')
+        try:
+            if id_doos.message ==id2:
+                await conv.send_message("دوست شما وصل شد!",buttons=dokme)
+        except Exception as e:
+            await conv.send_message('دوست شما وصل نیست، صبر کنید...')
+            return
 
 
 
-@client.on(events.CallbackQuery(pattern="s"))
+
+    @client.on(events.CallbackQuery(pattern="iron"))
+    async def handler110(event):
+        dokme = [
+            [
+                Button.inline("🪨سنگ", "iron"),
+                Button.inline("📃کاغذ", "xman"),
+                Button.inline("✂️قیچی","gold"),
+            ],
+        ]        
+        await event.reply('انتخاب کن',
+                        buttons=dokme)
+        game = 'sang'
+        mongo_client.doooz.online_game.update_one({'id':sender_id},{'$set':{'entekhab':game}})
+        bff = mongo_client.doooz.online_game.find_one({'id':id_doos.message})
+        entekhab = bff.get('entekhab')
+        if entekhab not in bff:
+            await event.reply('dobare emtehan kon doostet entekhab nakarde...')
+        if entekhab == game:
+            player_score=mongo_client.doooz.players.find_one({'id':event.query.user_id})
+            player_score = player_score.get('score')
+            player_new_score=player_score
+            await event.reply(' مساوی شد 🦍 \n امتیازت: ' + str(player_new_score),buttons=dokme)
+        elif entekhab =='kaghaz':
+            player_score=mongo_client.doooz.players.find_one({'id':event.query.user_id})
+            player_score = player_score.get('score')
+            player_new_score=player_score-3
+            mongo_client.doooz.players.update_one({'id':event.query.user_id},{'$set':{'score':player_new_score}})
+            await event.reply(' باختی بدبخت🤣 3 تا امتیاز از دست دادی \n امتیازت: ' + str(player_new_score),buttons=dokme)
+        elif entekhab == 'gheychi':
+            player_score=mongo_client.doooz.players.find_one({'id':event.query.user_id})
+            player_score = player_score.get('score')
+            player_new_score=player_score+5
+            mongo_client.doooz.players.update_one({'id':event.query.user_id},{'$set':{'score':player_new_score}})
+            await event.reply(' بردی 🥶 5 تا امتیاز مثبت گرفتی \n امتیازت: ' + str(player_new_score),buttons=dokme)
+
+
+
+    
+
+
+
+    @client.on(events.CallbackQuery(pattern="xman"))
+    async def handler120(event):
+        dokme = [
+            [
+                Button.inline("🪨سنگ", "iron"),
+                Button.inline("📃کاغذ", "xman"),
+                Button.inline("✂️قیچی","gold"),
+            ],
+        ]        
+        await event.reply('انتخاب کن',
+                        buttons=dokme)
+        game = 'kaghaz'
+
+        bff = mongo_client.doooz.online_game.find_one({'id':id_doos.message})
+        mongo_client.doooz.online_game.update_one({'id':sender_id},{'$set':{'entekhab':game}})
+        entekhab = bff.get('entekhab')
+        if entekhab not in bff:
+            await event.reply('dobare emtehan kon doostet entekhab nakarde...')
+        if entekhab == game:
+            player_score=mongo_client.doooz.players.find_one({'id':event.query.user_id})
+            player_score = player_score.get('score')
+            player_new_score=player_score
+            await event.reply(' مساوی شد 🦍 \n امتیازت: ' + str(player_new_score),buttons=dokme)
+        elif entekhab == 'sang':
+            player_score=mongo_client.doooz.players.find_one({'id':event.query.user_id})
+            player_score = player_score.get('score')
+            player_new_score=player_score+5
+            mongo_client.doooz.players.update_one({'id':event.query.user_id},{'$set':{'score':player_new_score}})
+            await event.reply(' بردی 🥶 5 تا امتیاز مثبت گرفتی \n امتیازت: ' + str(player_new_score),buttons=dokme)
+        elif entekhab == 'gheychi':
+            player_score=mongo_client.doooz.players.find_one({'id':event.query.user_id})
+            player_score = player_score.get('score')
+            player_new_score=player_score-3
+            mongo_client.doooz.players.update_one({'id':event.query.user_id},{'$set':{'score':player_new_score}})
+            await event.reply(' باختی بدبخت🤣 3 تا امتیاز از دست دادی \n امتیازت: ' + str(player_new_score),buttons=dokme)
+    
+    
+
+
+
+    @client.on(events.CallbackQuery(pattern="gold"))
+    async def handler130(event):
+        dokme = [
+            [
+                Button.inline("🪨سنگ", "iron"),
+                Button.inline("📃کاغذ", "xman"),
+                Button.inline("✂️قیچی","gold"),
+            ],
+        ]        
+        await event.reply('انتخاب کن',
+                        buttons=dokme)
+        game = 'gheychi'
+        bff = mongo_client.doooz.online_game.find_one({'id':id_doos.message})
+        mongo_client.doooz.online_game.update_one({'id':sender_id},{'$set':{'entekhab':game}})
+        entekhab = bff.get('entekhab')
+        if entekhab not in bff:
+            await event.reply('dobare emtehan kon doostet entekhab nakarde...')
+        if entekhab == game:
+            player_score=mongo_client.doooz.players.find_one({'id':event.query.user_id})
+            player_score = player_score.get('score')
+            player_new_score=player_score
+            await event.reply(' مساوی شد 🦍 \n امتیازت: ' + str(player_new_score),buttons=dokme)
+        elif entekhab == 'sang':
+            player_score=mongo_client.doooz.players.find_one({'id':event.query.user_id})
+            player_score = player_score.get('score')
+            player_new_score=player_score-3
+            mongo_client.doooz.players.update_one({'id':event.query.user_id},{'$set':{'score':player_new_score}})
+            await event.reply(' باختی بدبخت🤣 3 تا امتیاز از دست دادی \n امتیازت: ' + str(player_new_score),buttons=dokme)
+        elif entekhab== 'kaghaz':
+            player_score=mongo_client.doooz.players.find_one({'id':event.query.user_id})
+            player_score = player_score.get('score')
+            player_new_score=player_score+5
+            mongo_client.doooz.players.update_one({'id':event.query.user_id},{'$set':{'score':player_new_score}})
+            await event.reply(' بردی 🥶 5 تا امتیاز مثبت گرفتی \n امتیازت: ' + str(player_new_score),buttons=dokme)
+
+    
+
+
+
+
+
+@client.on(events.CallbackQuery(pattern="Gili"))
 async def call_handler12(event):
     dokme = [
         [
-            Button.inline("🪨سنگ", "s"),
+            Button.inline("🪨سنگ", "sigar"),
             Button.inline("📃کاغذ", "k"),
-            Button.inline("✂️قیچی","g"),
+            Button.inline("✂️قیچی","gholi"),
+        ],
+    ]
+    await event.reply('انتخاب کن',buttons=dokme)
+
+
+@client.on(events.CallbackQuery(pattern="sigar"))
+async def call_handler12(event):
+    dokme = [
+        [
+            Button.inline("🪨سنگ", "sigar"),
+            Button.inline("📃کاغذ", "k"),
+            Button.inline("✂️قیچی","gholi"),
         ],
     ]
     bot_bazi=random.randint(1,3)
@@ -111,9 +264,9 @@ async def call_handler12(event):
 async def call_handler6(event):
     dokme = [
         [
-            Button.inline("🪨سنگ", "s"),
+            Button.inline("🪨سنگ", "sigar"),
             Button.inline("📃کاغذ", "k"),
-            Button.inline("✂️قیچی","g"),
+            Button.inline("✂️قیچی","gholi"),
         ],
     ]
     bot_bazi=random.randint(1,3)
@@ -136,13 +289,13 @@ async def call_handler6(event):
         await event.reply(' بردی 🥶 5 تا امتیاز مثبت گرفتی \n امتیازت: ' + str(player_new_score),buttons=dokme)
 
 
-@client.on(events.CallbackQuery(pattern="g"))
+@client.on(events.CallbackQuery(pattern="gholi"))
 async def call_handler(event):
     dokme = [
         [
-            Button.inline("🪨سنگ", "s"),
+            Button.inline("🪨سنگ", "sigar"),
             Button.inline("📃کاغذ", "k"),
-            Button.inline("✂️قیچی","g"),
+            Button.inline("✂️قیچی","gholi"),
         ],
     ]
     bot_bazi=random.randint(1,3)
@@ -169,6 +322,87 @@ async def call_handler(event):
 async def call_handler2(event):
     dokme = [[Button.inline("بازی با بات", "friend"), Button.inline("بازی با دوست", "doost")]]
     await event.reply('انتخاب کن ربات یا دوست',buttons=dokme)
+
+@client.on(events.CallbackQuery(pattern="doost"))
+async def doost(event):
+    async with client.conversation(event.sender_id) as conv:
+        dokme =[[Button.inline("راست", "batman"), Button.inline("چپ", "spiderman"),]]
+        await conv.send_message('آی‌دی کسی که می‌خواهید با او بازی کنید را بدون @ وارد کنید!')
+        id_doos = await conv.get_response()
+        sender_id = event.sender.username
+        mongo_client.doooz.online_game.insert_one({'id':sender_id})
+        online_game = mongo_client.doooz.online_game.find_one({'id':id_doos.message})
+        id2 = online_game.get('id')
+        try:
+
+            if id_doos.message!=id2:
+                await conv.send_message('دوست شما وصل شد!\nانتخاب کنید',buttons=dokme)
+                return
+        except Exception as e:
+
+            await conv.send_message('دوست شما وصل نیست، صبر کنید...')
+            return
+
+
+
+
+    @client.on(events.CallbackQuery(pattern="batman"))
+    async def call_handler_gol_r_d(event):
+        dokme =  [[Button.inline("راست", "batman"), Button.inline("چپ", "spiderman")]]
+        game = 'rast'
+        sender_id = event.sender.username
+        mongo_client.doooz.online_game.update_one({'id':sender_id},{'$set':{'entekhab':game}})
+        bff = mongo_client.doooz.online_game.find_one({'id':id_doos.message})
+        entekhab = bff.get('entekhab')
+        if entekhab not in bff:
+            await event.reply('دوست شما انتخاب نکرده....')
+        if entekhab==game:
+            player_score=mongo_client.doooz.players.find_one({'id':event.query.user_id})
+            player_score = player_score.get('score')
+            player_new_score=player_score+5
+            players=mongo_client.doooz.players.update_one({'id':event.query.user_id},{'$set':{'score':player_new_score}})
+            await event.reply(' بردی 🥶 5 تا امتیاز مثبت گرفتی \n امتیازت: ' + str(player_new_score),buttons=dokme)
+            mongo_client.doooz.online_game.delete_one({'entekhab':game})
+        elif entekhab!=game:
+            player_score=mongo_client.doooz.players.find_one({'id':event.query.user_id})
+            player_score = player_score.get('score')
+            player_new_score=player_score-3
+            players=mongo_client.doooz.players.update_one({'id':event.query.user_id},{'$set':{'score':player_new_score}})
+    #be reply ezafeh she hala nobat bote
+            await event.reply(' باختی بدبخت🤣 3 تا امتیاز از دست دادی \n امتیازت: ' + str(player_new_score),buttons=dokme)
+            mongo_client.doooz.online_game.delete_one({'entekhab':game})
+        
+
+                
+
+
+    @client.on(events.CallbackQuery(pattern="spiderman"))
+    async def call_handler_gol_r(event):
+        dokme =  [[Button.inline("راست", "batman"), Button.inline("چپ", "spiderman")]]
+        game = 'chap'
+        sender_id = event.sender.username
+        mongo_client.doooz.online_game.update_one({'id':sender_id},{'$set':{'entekhab':game}})
+        bff = mongo_client.doooz.online_game.find_one({'id':id_doos.message})
+        entekhab = bff.get('entekhab')
+        if entekhab not in bff:
+            await event.reply('dobare emtehan kon doostet entekhab nakarde...')
+        if entekhab==game:
+            player_score=mongo_client.doooz.players.find_one({'id':event.query.user_id})
+            player_score = player_score.get('score')
+            player_new_score=player_score+5
+            players=mongo_client.doooz.players.update_one({'id':event.query.user_id},{'$set':{'score':player_new_score}})
+            await event.reply(' بردی 🥶 5 تا امتیاز مثبت گرفتی \n امتیازت: ' + str(player_new_score),buttons=dokme)
+            mongo_client.doooz.online_game.delete_one({'entekhab':game})
+        elif entekhab!=game:
+            player_score=mongo_client.doooz.players.find_one({'id':event.query.user_id})
+            player_score = player_score.get('score')
+            player_new_score=player_score-3
+            mongo_client.doooz.players.update_one({'id':event.query.user_id},{'$set':{'score':player_new_score}})
+    #be reply ezafeh she hala nobat bote
+            await event.reply(' باختی بدبخت🤣 3 تا امتیاز از دست دادی \n امتیازت: ' + str(player_new_score),buttons=dokme)
+            mongo_client.doooz.online_game.delete_one({'entekhab':game})
+        
+            
     
 @client.on(events.CallbackQuery(pattern="friend"))
 async def call_handler_gol(event):
