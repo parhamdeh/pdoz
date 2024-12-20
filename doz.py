@@ -451,7 +451,39 @@ async def call_handler_gol_c(event):
 # system emtiaz va if not game bayad dorost beshan
 @client.on(events.CallbackQuery(pattern="dooz"))
 async def call_handler2(event):
-    dokme = [[Button.inline("بازی با بات", "b"), Button.inline("بازی با دوست", "d")]]
+    dokme = [[Button.inline("بازی با بات", "b"), Button.inline("بازی با دوست", "did")]]
+
+    await event.reply('انتخاب کن',buttons=dokme)
+
+
+@client.on(events.CallbackQuery(pattern="did"))
+async def call_handler2(event):
+    async with client.conversation(event.sender_id) as conv:
+        await conv.send_message('آی‌دی کسی که می‌خواهید با او بازی کنید را بدون @ وارد کنید!')
+        id_doos = await conv.get_response()
+        sender_id = event.sender.username
+        board = ['_'] * 9  
+        mongo_client.doooz.online_game.update_one(
+        {'sender_id': sender_id},
+        {'$set': {'board': board, 'turn': 'player'}},
+        upsert=True
+    )
+        dokme = create_board_buttons(board)
+        online_game = mongo_client.doooz.online_game.find_one({'id':id_doos.message})
+        id2 = online_game.get('id')
+        try:
+            if id_doos.message!=id2:
+                await conv.send_message('دوست شما وصل شد!\nانتخاب کنید',buttons=dokme)
+                return
+        except Exception as e:
+
+            await conv.send_message('دوست شما وصل نیست، صبر کنید...')
+            return
+
+
+
+
+
 
     await event.reply('انتخاب کن',buttons=dokme)
 
